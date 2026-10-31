@@ -324,6 +324,13 @@ it("completes the durable workflow through mocked Conductor and Slack APIs", asy
   const run = await t.query(internal.runs.get, { runId: id });
   expect(run.status).toBe("idle");
   expect(run.cursor).toBe("answer1");
+  const slackPosts = fetchMock.mock.calls
+    .filter(([url]) => url.includes("chat.postMessage"))
+    .map(([, options]) => JSON.parse(options!.body as string));
+  expect(slackPosts[0].text).toBe("<conductor://w1|Open workspace>");
+  expect(slackPosts[0].mrkdwn).toBe(true);
+  expect(slackPosts[1].mrkdwn).toBe(false);
+
   expect(
     fetchMock.mock.calls.filter(([url]) => url.endsWith("/workspaces")),
   ).toHaveLength(1);

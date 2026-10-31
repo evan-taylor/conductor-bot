@@ -23,7 +23,8 @@ export const drive = workflow
       {
         runId,
         key: "workspace",
-        text: `Workspace ready. Replies in this thread go to the agent.\n${run.deepLink}`,
+        text: `<${run.deepLink}|Open workspace>`,
+        mrkdwn: true,
       },
       { retry: false },
     );

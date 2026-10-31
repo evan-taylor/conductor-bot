@@ -39,9 +39,14 @@ export const sendInput = internalAction({
   },
 });
 export const notify = internalAction({
-  args: { runId: v.id("runs"), key: v.string(), text: v.string() },
+  args: {
+    runId: v.id("runs"),
+    key: v.string(),
+    text: v.string(),
+    mrkdwn: v.optional(v.boolean()),
+  },
   returns: v.null(),
-  handler: async (ctx, { runId, key, text }) => {
+  handler: async (ctx, { runId, key, text, mrkdwn }) => {
     const run = await ctx.runQuery(internal.runs.get, { runId });
     if (!run.channel) return null;
     let threadTs = run.threadTs;
@@ -55,7 +60,7 @@ export const notify = internalAction({
         threadTs ??= existing;
         continue;
       }
-      const slackTs = await postSlack(run.channel, chunk, threadTs);
+      const slackTs = await postSlack(run.channel, chunk, threadTs, mrkdwn);
       await ctx.runMutation(internal.runs.recordOutput, {
         runId,
         key: partKey,

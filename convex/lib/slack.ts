@@ -4,6 +4,7 @@ export async function postSlack(
   channel: string,
   text: string,
   threadTs?: string,
+  mrkdwn = false,
 ): Promise<string> {
   const response = await fetch("https://slack.com/api/chat.postMessage", {
     method: "POST",
@@ -17,7 +18,7 @@ export async function postSlack(
       thread_ts: threadTs,
       unfurl_links: false,
       unfurl_media: false,
-      mrkdwn: false,
+      mrkdwn,
     }),
     signal: AbortSignal.timeout(15000),
   });

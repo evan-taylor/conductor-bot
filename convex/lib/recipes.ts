@@ -10,5 +10,5 @@ export function isRecipe(value: string): value is Recipe {
 }
 export function makeBrief(recipe: string, prompt: string): string {
   if (!isRecipe(recipe)) throw new Error("Unknown recipe");
-  return `${recipes[recipe]}\n\nTask context:\n${prompt}`;
+  return `${recipes[recipe]} Keep replies concise and conversational. Skip boilerplate acknowledgements and explanations of how this integration works.\n\nTask context:\n${prompt}`;
 }
