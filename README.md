@@ -19,7 +19,8 @@ server or database is required.
   the user's message. Agents are instructed to use `babysit-pr` for every PR they
   create and report merge readiness without merging.
 - Assistant replies use native Slack Markdown blocks for headings, emphasis,
-  links, lists, tables, and code, with plain-text notification fallbacks.
+  links, lists, tables, and code, with plain-text notification fallbacks. Local
+  workspace file links are rendered as readable paths instead of broken links.
 - Authenticated automation requests create runs and optionally start Slack threads.
 - Slack replies to automation-created threads reach their existing workspace.
 - Duplicate source messages/events reuse the same run and input record.

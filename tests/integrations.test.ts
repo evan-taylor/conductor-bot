@@ -7,7 +7,7 @@ import {
   conductor,
   inputMessageId,
 } from "../convex/lib/conductor";
-import { chunks } from "../convex/lib/slack";
+import { chunks, slackFileReferences } from "../convex/lib/slack";
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -191,5 +191,27 @@ describe("live Codex transcript format", () => {
     expect(
       assistantText(event("item.completed", "agentMessage", "analysis")),
     ).toBeNull();
+  });
+});
+
+describe("Slack file references", () => {
+  it("replaces workspace links with useful paths and preserves web links", () => {
+    expect(
+      slackFileReferences(
+        "[connection bridge](/home/vercel-sandbox/soljio/convex/payments/http.ts:42) [src/app.ts](src/app.ts) [notes](<file:///tmp/my notes.txt>) [PR](https://github.com/example/repo/pull/1)",
+      ),
+    ).toBe(
+      "connection bridge (`convex/payments/http.ts:42`) `src/app.ts` notes (`/tmp/my notes.txt`) [PR](https://github.com/example/repo/pull/1)",
+    );
+  });
+  it("preserves literal Markdown examples and handles parentheses in paths", () => {
+    expect(slackFileReferences("[`src/app.ts`](src/app.ts)")).toBe(
+      "`src/app.ts`",
+    );
+    const code = "`[file](/tmp/a)`\n```md\n[file](/tmp/a)\n```";
+    expect(slackFileReferences(code)).toBe(code);
+    expect(slackFileReferences("[route](src/(app)/page.tsx)")).toBe(
+      "route (`src/(app)/page.tsx`)",
+    );
   });
 });

@@ -10,7 +10,12 @@ import {
 import { archiveInProgressOrDone } from "./validators";
 import { makeBrief } from "./lib/recipes";
 import { stableUuid } from "./lib/security";
-import { chunks, postSlack, updateWorkspaceMessage } from "./lib/slack";
+import {
+  chunks,
+  postSlack,
+  slackFileReferences,
+  updateWorkspaceMessage,
+} from "./lib/slack";
 
 export const createWorkspace = internalAction({
   args: { runId: v.id("runs") },
@@ -61,7 +66,10 @@ export const notify = internalAction({
     const run = await ctx.runQuery(internal.runs.get, { runId });
     if (!run.channel || archiveInProgressOrDone(run.status)) return null;
     let threadTs = run.threadTs;
-    for (const [index, chunk] of chunks(text).entries()) {
+    const replyText = key.startsWith("message:")
+      ? slackFileReferences(text)
+      : text;
+    for (const [index, chunk] of chunks(replyText).entries()) {
       const partKey = `${key}:${index}`;
       const existing = await ctx.runQuery(internal.runs.output, {
         runId,

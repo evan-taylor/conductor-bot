@@ -56,6 +56,30 @@ export async function postSlack(
   });
 }
 
+// Local workspace links cannot be opened by a Slack reader. Preserve the label
+// and file location, while leaving web links and literal code untouched.
+export function slackFileReferences(text: string): string {
+  const readable = (label: string, target: string) => {
+    if (/^(?:https?:|mailto:|slack:|conductor:|\/\/)/i.test(target))
+      return undefined;
+    const path = target
+      .replace(/^file:\/\/\//i, "/")
+      .replace(/^\/home\/vercel-sandbox\/[^/]+\//, "");
+    const code = "`" + path.replace(/`/g, "") + "`";
+    return label.replace(/`/g, "") === path ? code : `${label} (${code})`;
+  };
+  return text.replace(
+    /```[\s\S]*?```|~~~[\s\S]*?~~~|\[([^\]\n]+)\]\((<[^>\n]+>|(?:[^()\n]|\([^()\n]*\))+)\)|`+[^`\n]*`+/g,
+    (match, label: string | undefined, destination: string | undefined) => {
+      if (label === undefined || destination === undefined) return match;
+      const target = destination.startsWith("<")
+        ? destination.slice(1, -1)
+        : destination.replace(/\s+["'][^"']*["']$/, "");
+      return readable(label, target) ?? match;
+    },
+  );
+}
+
 export function chunks(text: string): string[] {
   const chars = Array.from(text);
   const result: string[] = [];
