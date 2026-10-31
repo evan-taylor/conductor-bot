@@ -1,0 +1,31 @@
+{
+  "name": "conductor-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Slack conversations and webhook automations for Conductor Cloud, powered by Convex.",
+  "scripts": {
+    "dev": "convex dev",
+    "deploy": "convex deploy",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p convex/tsconfig.json",
+    "test": "vitest run",
+    "check": "npm run format:check && npm run typecheck && npm test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@convex-dev/workflow": "^0.4.10",
+    "convex": "^1.49.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "convex-test": "^0.0.66",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}
