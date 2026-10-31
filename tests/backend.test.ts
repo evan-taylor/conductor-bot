@@ -327,8 +327,18 @@ it("completes the durable workflow through mocked Conductor and Slack APIs", asy
   const slackPosts = fetchMock.mock.calls
     .filter(([url]) => url.includes("chat.postMessage"))
     .map(([, options]) => JSON.parse(options!.body as string));
-  expect(slackPosts[0].text).toBe("<conductor://w1|Open workspace>");
-  expect(slackPosts[0].mrkdwn).toBe(true);
+  expect(slackPosts[0].text).toBe("Open workspace: conductor://w1");
+  expect(slackPosts[0].blocks[0].elements[0]).toEqual({
+    type: "button",
+    action_id: "open_workspace",
+    text: { type: "plain_text", text: "Open workspace" },
+    url: "conductor://w1",
+  });
+  const creation = fetchMock.mock.calls.find(([url]) =>
+    url.endsWith("/workspaces"),
+  )!;
+  expect(JSON.parse(creation[1]!.body as string).name).toBe("Fix the bug");
+  expect(slackPosts[1].blocks).toBeUndefined();
   expect(slackPosts[1].mrkdwn).toBe(false);
 
   expect(

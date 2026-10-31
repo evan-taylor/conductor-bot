@@ -10,5 +10,5 @@ export function isRecipe(value: string): value is Recipe {
 }
 export function makeBrief(recipe: string, prompt: string): string {
   if (!isRecipe(recipe)) throw new Error("Unknown recipe");
-  return `${recipes[recipe]} Keep replies concise and conversational. Skip boilerplate acknowledgements and explanations of how this integration works.\n\nTask context:\n${prompt}`;
+  return `${recipes[recipe]} If you create a pull request, always locate, read, and run the installed babysit-pr skill to get it merge-ready. Follow its review and CI loop on the latest head, fix actionable findings and failures, and resolve review threads. Use its prescribed watcher rather than writing a polling loop. Do not claim merge-ready until its checks pass; if the skill is unavailable, report that blocker. Do not merge unless explicitly requested. Keep replies concise and conversational. Skip boilerplate acknowledgements and explanations of how this integration works.\n\nTask context:\n${prompt}`;
 }

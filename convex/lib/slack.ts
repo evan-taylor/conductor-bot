@@ -4,7 +4,7 @@ export async function postSlack(
   channel: string,
   text: string,
   threadTs?: string,
-  mrkdwn = false,
+  options: { mrkdwn?: boolean; workspaceUrl?: string } = {},
 ): Promise<string> {
   const response = await fetch("https://slack.com/api/chat.postMessage", {
     method: "POST",
@@ -18,7 +18,10 @@ export async function postSlack(
       thread_ts: threadTs,
       unfurl_links: false,
       unfurl_media: false,
-      mrkdwn,
+      mrkdwn: options.mrkdwn ?? false,
+      ...(options.workspaceUrl
+        ? { blocks: workspaceButton(options.workspaceUrl) }
+        : {}),
     }),
     signal: AbortSignal.timeout(15000),
   });
@@ -43,4 +46,20 @@ export function chunks(text: string): string[] {
   for (let i = 0; i < chars.length; i += 3000)
     result.push(chars.slice(i, i + 3000).join(""));
   return result;
+}
+
+export function workspaceButton(url: string) {
+  return [
+    {
+      type: "actions",
+      elements: [
+        {
+          type: "button",
+          action_id: "open_workspace",
+          text: { type: "plain_text", text: "Open workspace" },
+          url,
+        },
+      ],
+    },
+  ];
 }

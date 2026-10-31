@@ -135,3 +135,17 @@ export function assistantText(message: TranscriptMessage): string | null {
       .trim() || null
   );
 }
+
+export function workspaceName(request: string): string {
+  const title = request
+    .replace(/<[^>|]+\|([^>]+)>/g, "$1")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(?:(?:can|could|would) you\s+)?(?:please\s+)?/i, "")
+    .replace(/[.?!\s]+$/u, "")
+    .trim();
+  if (!title) return "Slack task";
+  const shortened =
+    title.length > 80 ? title.slice(0, 77).replace(/\s+\S*$/, "") + "…" : title;
+  return shortened[0].toUpperCase() + shortened.slice(1);
+}

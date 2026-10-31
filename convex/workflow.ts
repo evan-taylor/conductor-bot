@@ -23,8 +23,8 @@ export const drive = workflow
       {
         runId,
         key: "workspace",
-        text: `<${run.deepLink}|Open workspace>`,
-        mrkdwn: true,
+        text: `Open workspace: ${run.deepLink}`,
+        workspaceUrl: run.deepLink,
       },
       { retry: false },
     );

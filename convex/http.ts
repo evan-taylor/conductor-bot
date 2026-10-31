@@ -61,6 +61,28 @@ http.route({
   }),
 });
 
+// URL buttons still send a signed interaction; acknowledge without starting work.
+http.route({
+  path: "/slack/interactions",
+  method: "POST",
+  handler: httpAction(async (_ctx, request) => {
+    const body = await request.text();
+    if (body.length > 100000)
+      return new Response("Payload too large", { status: 413 });
+    if (
+      !(await verifySlackRequest(
+        required("SLACK_SIGNING_SECRET"),
+        body,
+        request.headers.get("x-slack-request-timestamp"),
+        request.headers.get("x-slack-signature"),
+      ))
+    ) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    return new Response(null, { status: 200 });
+  }),
+});
+
 const webhookPayload = z
   .object({
     eventId: z.string().min(1).max(200),

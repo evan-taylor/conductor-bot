@@ -1,7 +1,12 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { conductor, assistantText, inputMessageId } from "./lib/conductor";
+import {
+  conductor,
+  assistantText,
+  inputMessageId,
+  workspaceName,
+} from "./lib/conductor";
 import { makeBrief } from "./lib/recipes";
 import { stableUuid } from "./lib/security";
 import { chunks, postSlack } from "./lib/slack";
@@ -12,7 +17,10 @@ export const createWorkspace = internalAction({
   handler: async (ctx, { runId }) => {
     const run = await ctx.runQuery(internal.runs.get, { runId });
     if (run.workspaceId) return null;
-    const result = await conductor.create(run.projectId, `bot-${runId}`);
+    const result = await conductor.create(
+      run.projectId,
+      workspaceName(run.title),
+    );
     await ctx.runMutation(internal.runs.attach, { runId, ...result });
     return null;
   },
@@ -44,9 +52,10 @@ export const notify = internalAction({
     key: v.string(),
     text: v.string(),
     mrkdwn: v.optional(v.boolean()),
+    workspaceUrl: v.optional(v.string()),
   },
   returns: v.null(),
-  handler: async (ctx, { runId, key, text, mrkdwn }) => {
+  handler: async (ctx, { runId, key, text, mrkdwn, workspaceUrl }) => {
     const run = await ctx.runQuery(internal.runs.get, { runId });
     if (!run.channel) return null;
     let threadTs = run.threadTs;
@@ -60,7 +69,10 @@ export const notify = internalAction({
         threadTs ??= existing;
         continue;
       }
-      const slackTs = await postSlack(run.channel, chunk, threadTs, mrkdwn);
+      const slackTs = await postSlack(run.channel, chunk, threadTs, {
+        mrkdwn,
+        workspaceUrl: index === 0 ? workspaceUrl : undefined,
+      });
       await ctx.runMutation(internal.runs.recordOutput, {
         runId,
         key: partKey,

@@ -9,10 +9,12 @@ server or database is required.
 
 ## What works
 
-- A mention starts a workspace in the configured Conductor project.
+- A mention starts a workspace named from the request in the configured Conductor project.
+- The first bot message includes an **Open workspace** button.
 - Authorized human replies in the thread are queued and sent to the same session.
 - Recipe instructions are included on the first input only; follow-ups contain just
-  the user's message.
+  the user's message. Agents are instructed to use `babysit-pr` for every PR they
+  create and report merge readiness without merging.
 - Assistant text and PR links are relayed back to Slack.
 - Authenticated automation requests create runs and optionally start Slack threads.
 - Slack replies to automation-created threads reach their existing workspace.
@@ -61,6 +63,8 @@ credentials. `convex dev` refreshes them when backend functions change.
 5. Enable event subscriptions to `https://YOUR_DEPLOYMENT.convex.site/slack/events`.
    Wait for Slack to mark the URL verified, then add the bot events `app_mention`,
    `message.channels`, and `message.groups`, and save.
+   Enable Interactivity and set its Request URL to
+   `https://YOUR_DEPLOYMENT.convex.site/slack/interactions` for button acknowledgements.
    Mention the app: `@Conductor investigate the failing checkout test and open a PR`.
    Once it responds in the thread, reply there without another mention.
 
@@ -143,8 +147,9 @@ exactly-once external effects:
   version requires the operator to inspect Convex; it does not promise a Slack
   failure notification when Slack itself is the failing integration.
 
-To recover an uncertain creation, find the workspace named `bot-<runId>` in
-Conductor. Verify it belongs to the intended project, then attach its returned
+To recover an uncertain creation, find the workspace named from the run's `title`
+in Conductor (older runs used `bot-<runId>`). Match its project and creation time
+as names can repeat, then attach its returned
 IDs and link with the internal `runs:attach` function in the Convex dashboard.
 If creation definitely did not occur, create the workspace once through Conductor
 and attach it. Never restart creation blindly.
