@@ -127,6 +127,12 @@ describe("Conductor contract", () => {
     expect(
       assistantText({
         type: "assistant",
+        content: { type: "thinking", text: "private reasoning" },
+      }),
+    ).toBeNull();
+    expect(
+      assistantText({
+        type: "assistant",
         content: {
           content: [
             { type: "thinking", text: "secret" },

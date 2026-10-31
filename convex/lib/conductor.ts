@@ -76,6 +76,8 @@ export function assistantText(message: {
   if (typeof content === "string") return content.trim() || null;
   if (!content || typeof content !== "object") return null;
   const obj = content as Record<string, unknown>;
+  if (obj.type && !["text", "message", "assistant"].includes(String(obj.type)))
+    return null;
   if (obj.role && obj.role !== "assistant") return null;
   if (typeof obj.text === "string") return obj.text.trim() || null;
   const blocks = Array.isArray(content) ? content : obj.content;
