@@ -46,9 +46,10 @@ credentials. `convex dev` refreshes them when backend functions change.
 1. Obtain a Conductor API key and a project ID from
    [Conductor's API](https://www.conductor.build/docs/api). Pick an explicit agent
    and model supported by its [OpenAPI contract](https://api.conductor.build/v0/openapi.json).
-2. Create a Slack app from `slack-manifest.json`, replacing the deployment URL.
-   Install it into your Slack workspace and invite it to the channels it should use.
-   You can remove the private-channel scope/event if not needed.
+2. Create and install a Slack app from `slack-manifest.json`. The initial manifest
+   deliberately omits event subscriptions: Slack needs the signing secret on the
+   backend before it can verify the request URL. Invite the app to the channels
+   it should use. You can remove the private-channel scope/event if not needed.
 3. Configure the variables in `.env.example` on the Convex deployment using the
    Convex dashboard or `npx convex env set NAME value`. Secrets belong on the
    deployment, not in the repository. Do not paste them into issue reports.
@@ -56,6 +57,8 @@ credentials. `convex dev` refreshes them when backend functions change.
    `SLACK_BOT_USER_ID` is the bot's user ID, not its app ID. Set the signing secret
    before Slack verifies the event URL.
 5. Enable event subscriptions to `https://YOUR_DEPLOYMENT.convex.site/slack/events`.
+   Wait for Slack to mark the URL verified, then add the bot events `app_mention`,
+   `message.channels`, and `message.groups`, and save.
    Mention the app: `@Conductor investigate the failing checkout test and open a PR`.
    Once it responds in the thread, reply there without another mention.
 

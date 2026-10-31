@@ -5,7 +5,10 @@
     "background_color": "#24354b"
   },
   "features": {
-    "bot_user": { "display_name": "Conductor", "always_online": false }
+    "bot_user": {
+      "display_name": "Conductor",
+      "always_online": false
+    }
   },
   "oauth_config": {
     "scopes": {
@@ -18,10 +21,6 @@
     }
   },
   "settings": {
-    "event_subscriptions": {
-      "request_url": "https://YOUR_DEPLOYMENT.convex.site/slack/events",
-      "bot_events": ["app_mention", "message.channels", "message.groups"]
-    },
     "org_deploy_enabled": false,
     "socket_mode_enabled": false,
     "token_rotation_enabled": false
