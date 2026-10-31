@@ -34,7 +34,12 @@ export async function postSlack(
   channel: string,
   text: string,
   threadTs?: string,
-  options: { mrkdwn?: boolean; workspaceUrl?: string; runId?: string } = {},
+  options: {
+    mrkdwn?: boolean;
+    markdown?: boolean;
+    workspaceUrl?: string;
+    runId?: string;
+  } = {},
 ): Promise<string> {
   return slackRequest("chat.postMessage", {
     channel,
@@ -45,7 +50,9 @@ export async function postSlack(
     mrkdwn: options.mrkdwn ?? false,
     ...(options.workspaceUrl
       ? { blocks: workspaceButton(options.workspaceUrl, options.runId) }
-      : {}),
+      : options.markdown
+        ? { blocks: [{ type: "markdown", text }] }
+        : {}),
   });
 }
 

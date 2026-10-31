@@ -18,7 +18,8 @@ server or database is required.
 - Recipe instructions are included on the first input only; follow-ups contain just
   the user's message. Agents are instructed to use `babysit-pr` for every PR they
   create and report merge readiness without merging.
-- Assistant text and PR links are relayed back to Slack.
+- Assistant replies use native Slack Markdown blocks for headings, emphasis,
+  links, lists, tables, and code, with plain-text notification fallbacks.
 - Authenticated automation requests create runs and optionally start Slack threads.
 - Slack replies to automation-created threads reach their existing workspace.
 - Duplicate source messages/events reuse the same run and input record.

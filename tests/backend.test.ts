@@ -308,7 +308,7 @@ it("completes the durable workflow through mocked Conductor and Slack APIs", asy
                   item: {
                     type: "agentMessage",
                     phase: "final_answer",
-                    text: "Fix ready: https://github.com/example/repo/pull/1",
+                    text: "## Fix ready\n\n**Checks passed.** Run `npm test`.\n\n[View PR](https://github.com/example/repo/pull/1)",
                   },
                 },
               },
@@ -339,7 +339,12 @@ it("completes the durable workflow through mocked Conductor and Slack APIs", asy
     url.endsWith("/workspaces"),
   )!;
   expect(JSON.parse(creation[1]!.body as string).name).toBe("Fix the bug");
-  expect(slackPosts[1].blocks).toBeUndefined();
+  expect(slackPosts[1].blocks).toEqual([
+    {
+      type: "markdown",
+      text: "## Fix ready\n\n**Checks passed.** Run `npm test`.\n\n[View PR](https://github.com/example/repo/pull/1)",
+    },
+  ]);
   expect(slackPosts[1].mrkdwn).toBe(false);
 
   expect(

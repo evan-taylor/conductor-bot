@@ -73,6 +73,7 @@ export const notify = internalAction({
       }
       const slackTs = await postSlack(run.channel, chunk, threadTs, {
         mrkdwn,
+        markdown: key.startsWith("message:"),
         runId,
         workspaceUrl: index === 0 ? workspaceUrl : undefined,
       });
