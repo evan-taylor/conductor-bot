@@ -153,10 +153,14 @@ notice: `workspace:0`; transcript chunk: `message:<messageId>:<chunkIndex>`).
 Then call internal `runs:resume` with the run ID. These functions are available to
 deployment operators through the dashboard/CLI, never public client endpoints.
 
-Conductor's transcript `content` is untyped in its beta spec. The adapter handles
-plain assistant strings and text-block content; unfamiliar shapes are skipped
-rather than forwarding tool output. Verify the actual agent's transcript format
-during the live smoke test before relying on unattended automations.
+Conductor's transcript `content` is untyped in its beta spec. The adapter supports
+Codex `agent` events containing completed `agentMessage` items, plus plain assistant
+strings and text blocks. It correlates Codex replies using `userMessageId`, not the
+transcript event ID. Streaming deltas, reasoning, and tool output are excluded.
+Unknown agent formats are skipped; validate a new agent before using it unattended.
+After upgrading the adapter, `runs:rewindTranscript` lets an operator replay a run's
+transcript. Existing delivery keys prevent already-recorded Slack posts from being
+sent again.
 
 ## Verification
 

@@ -1,7 +1,7 @@
 import { v } from "convex/values";
 import { internalAction } from "./_generated/server";
 import { internal } from "./_generated/api";
-import { conductor, assistantText } from "./lib/conductor";
+import { conductor, assistantText, inputMessageId } from "./lib/conductor";
 import { makeBrief } from "./lib/recipes";
 import { stableUuid } from "./lib/security";
 import { chunks, postSlack } from "./lib/slack";
@@ -85,9 +85,16 @@ export const poll = internalAction({
     let inputObserved = run.inputObserved ?? false;
     let replyObserved = run.replyObserved ?? false;
     for (const message of page.data) {
-      if (message.id === run.awaitingMessageId) inputObserved = true;
+      const inputId = inputMessageId(message);
+      if (inputId && inputId === run.awaitingMessageId) inputObserved = true;
       const text = assistantText(message);
-      if (text && inputObserved) replyObserved = true;
+      if (
+        text &&
+        (message.type === "agent"
+          ? inputId === run.awaitingMessageId
+          : inputObserved)
+      )
+        replyObserved = true;
       if (text)
         await ctx.runAction(internal.actions.notify, {
           runId,

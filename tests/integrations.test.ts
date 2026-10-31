@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createHmac } from "node:crypto";
 import { verifySlackRequest, stableUuid } from "../convex/lib/security";
 import { normalizeSlack } from "../convex/lib/slackEvents";
-import { assistantText, conductor } from "../convex/lib/conductor";
+import {
+  assistantText,
+  conductor,
+  inputMessageId,
+} from "../convex/lib/conductor";
 import { chunks } from "../convex/lib/slack";
 
 afterEach(() => {
@@ -152,5 +156,40 @@ describe("Conductor contract", () => {
     const text = "😀".repeat(6001);
     expect(chunks(text)).toHaveLength(3);
     expect(chunks(text).join("")).toBe(text);
+  });
+});
+
+describe("live Codex transcript format", () => {
+  const event = (type: string, itemType: string, phase = "final_answer") => ({
+    id: "event-id",
+    type: "agent",
+    content: {
+      userMessageId: "client-input-id",
+      rawPayload: {
+        event: { type, item: { type: itemType, text: "Connected", phase } },
+      },
+    },
+  });
+  it("relays completed agent messages and correlates the client input ID", () => {
+    const message = event("item.completed", "agentMessage");
+    expect(assistantText(message)).toBe("Connected");
+    expect(inputMessageId(message)).toBe("client-input-id");
+    expect(
+      inputMessageId({
+        id: "different-event-id",
+        type: "userMessage",
+        content: { id: "client-input-id" },
+      }),
+    ).toBe("client-input-id");
+  });
+  it("does not relay tools, reasoning, or partial text", () => {
+    expect(assistantText(event("item.started", "agentMessage"))).toBeNull();
+    expect(
+      assistantText(event("item.completed", "commandExecution")),
+    ).toBeNull();
+    expect(assistantText(event("item.completed", "reasoning"))).toBeNull();
+    expect(
+      assistantText(event("item.completed", "agentMessage", "analysis")),
+    ).toBeNull();
   });
 });

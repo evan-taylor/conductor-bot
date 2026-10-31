@@ -246,3 +246,17 @@ export const resume = internalMutation({
     return null;
   },
 });
+
+// Replay after adapter upgrades. Existing delivery keys prevent duplicate Slack posts.
+export const rewindTranscript = internalMutation({
+  args: { runId: v.id("runs") },
+  returns: v.null(),
+  handler: async (ctx, { runId }) => {
+    await ctx.db.patch(runId, {
+      cursor: undefined,
+      inputObserved: false,
+      replyObserved: false,
+    });
+    return null;
+  },
+});

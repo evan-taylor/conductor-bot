@@ -66,11 +66,52 @@ export const conductor = {
   },
 };
 
-// Never forward tool output or reasoning. Content is untyped in the upstream spec.
-export function assistantText(message: {
-  type: string;
-  content: unknown;
-}): string | null {
+type TranscriptMessage = { id?: string; type: string; content: unknown };
+
+const codexEvent = z.object({
+  userMessageId: z.string(),
+  rawPayload: z.object({
+    event: z.object({
+      type: z.string(),
+      item: z
+        .object({
+          type: z.string(),
+          text: z.string().optional(),
+          phase: z.string().nullish(),
+        })
+        .optional(),
+    }),
+  }),
+});
+
+// The transcript event ID differs from the idempotency ID supplied on send.
+export function inputMessageId(message: TranscriptMessage): string | undefined {
+  if (message.type === "userMessage") {
+    const parsed = z.object({ id: z.string() }).safeParse(message.content);
+    return parsed.success ? parsed.data.id : undefined;
+  }
+  if (message.type === "agent") {
+    const parsed = codexEvent.safeParse(message.content);
+    return parsed.success ? parsed.data.userMessageId : undefined;
+  }
+  return message.type === "user" ? message.id : undefined;
+}
+
+// Forward only completed visible messages, never streaming deltas, tools or reasoning.
+export function assistantText(message: TranscriptMessage): string | null {
+  if (message.type === "agent") {
+    const parsed = codexEvent.safeParse(message.content);
+    if (!parsed.success) return null;
+    const event = parsed.data.rawPayload.event;
+    if (event.type !== "item.completed" || event.item?.type !== "agentMessage")
+      return null;
+    if (
+      event.item.phase &&
+      !["final_answer", "commentary"].includes(event.item.phase)
+    )
+      return null;
+    return event.item.text?.trim() || null;
+  }
   if (message.type !== "assistant") return null;
   const content = message.content;
   if (typeof content === "string") return content.trim() || null;

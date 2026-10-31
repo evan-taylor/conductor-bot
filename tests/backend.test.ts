@@ -171,7 +171,28 @@ it("does not let an unread reply from an older turn complete a newer input", asy
             type: "assistant",
             content: "Done with the previous task",
           },
-          { id: "new-message", type: "user", content: "New task" },
+          {
+            id: "new-input-event",
+            type: "userMessage",
+            content: { id: "new-message", message: "New task" },
+          },
+          {
+            id: "late-old-answer",
+            type: "agent",
+            content: {
+              userMessageId: "old-message",
+              rawPayload: {
+                event: {
+                  type: "item.completed",
+                  item: {
+                    type: "agentMessage",
+                    phase: "final_answer",
+                    text: "An older turn completed late",
+                  },
+                },
+              },
+            },
+          },
         ],
         hasMore: false,
       });
@@ -246,11 +267,27 @@ it("completes the durable workflow through mocked Conductor and Slack APIs", asy
     if (url.includes("/messages?"))
       return Response.json({
         data: [
-          { id: sentId, type: "user", content: "Fix the bug" },
+          {
+            id: "input-event",
+            type: "userMessage",
+            content: { id: sentId, message: "Fix the bug" },
+          },
           {
             id: "answer1",
-            type: "assistant",
-            content: "Fix ready: https://github.com/example/repo/pull/1",
+            type: "agent",
+            content: {
+              userMessageId: sentId,
+              rawPayload: {
+                event: {
+                  type: "item.completed",
+                  item: {
+                    type: "agentMessage",
+                    phase: "final_answer",
+                    text: "Fix ready: https://github.com/example/repo/pull/1",
+                  },
+                },
+              },
+            },
           },
         ],
         hasMore: false,
