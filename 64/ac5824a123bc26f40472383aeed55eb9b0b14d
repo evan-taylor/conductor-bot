@@ -1,0 +1,20 @@
+README.md
+  h_83bc5aaa251b9b 21-22
+convex/actions.ts
+  h_83bc5aaa251b9b 76
+convex/lib/slack.ts
+  h_83bc5aaa251b9b 37-42,53-55
+tests/backend.test.ts
+  h_83bc5aaa251b9b 311,342-347
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "64ac5824a123bc26f40472383aeed55eb9b0b14d",
+  "prompts": {},
+  "humans": {
+    "h_83bc5aaa251b9b": {
+      "author": "Evan Taylor <eltaylor1104@gmail.com>"
+    }
+  }
+}
