@@ -1,0 +1,28 @@
+README.md
+  h_83bc5aaa251b9b 13-16
+convex/actions.ts
+  h_83bc5aaa251b9b 10,13,20,36,62,76,98,140-182
+convex/http.ts
+  h_83bc5aaa251b9b 64,68,82-116
+convex/lib/conductor.ts
+  h_83bc5aaa251b9b 37-46
+convex/lib/slack.ts
+  h_83bc5aaa251b9b 3-6,8,14,32-51,60-72,74-81,91-100,105-121
+convex/runs.ts
+  h_83bc5aaa251b9b 2,11,13,69,241-242,267-327
+convex/validators.ts
+  h_83bc5aaa251b9b 7-9,50-53
+tests/backend.test.ts
+  h_83bc5aaa251b9b 3,352-515
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "04440651af3dcad192194f5043b3da85096dc3f9",
+  "prompts": {},
+  "humans": {
+    "h_83bc5aaa251b9b": {
+      "author": "Evan Taylor <eltaylor1104@gmail.com>"
+    }
+  }
+}
