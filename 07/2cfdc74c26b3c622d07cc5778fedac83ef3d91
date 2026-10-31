@@ -1,0 +1,74 @@
+.env.example
+  h_83bc5aaa251b9b 1-16
+.github/workflows/ci.yml
+  h_83bc5aaa251b9b 1-17
+.gitignore
+  h_83bc5aaa251b9b 1-7
+.prettierignore
+  h_83bc5aaa251b9b 1-4
+README.md
+  h_83bc5aaa251b9b 1-168
+convex/_generated/api.d.ts
+  h_83bc5aaa251b9b 1-71
+convex/_generated/api.js
+  h_83bc5aaa251b9b 1-23
+convex/_generated/dataModel.d.ts
+  h_83bc5aaa251b9b 1-60
+convex/_generated/server.d.ts
+  h_83bc5aaa251b9b 1-162
+convex/_generated/server.js
+  h_83bc5aaa251b9b 1-101
+convex/actions.ts
+  h_83bc5aaa251b9b 1-111
+convex/convex.config.ts
+  h_83bc5aaa251b9b 1-5
+convex/http.ts
+  h_83bc5aaa251b9b 1-111
+convex/lib/conductor.ts
+  h_83bc5aaa251b9b 1-94
+convex/lib/config.ts
+  h_83bc5aaa251b9b 1-15
+convex/lib/recipes.ts
+  h_83bc5aaa251b9b 1-14
+convex/lib/security.ts
+  h_83bc5aaa251b9b 1-64
+convex/lib/slack.ts
+  h_83bc5aaa251b9b 1-45
+convex/lib/slackEvents.ts
+  h_83bc5aaa251b9b 1-43
+convex/runs.ts
+  h_83bc5aaa251b9b 1-248
+convex/schema.ts
+  h_83bc5aaa251b9b 1-22
+convex/tsconfig.json
+  h_83bc5aaa251b9b 1-26
+convex/validators.ts
+  h_83bc5aaa251b9b 1-46
+convex/workflow.ts
+  h_83bc5aaa251b9b 1-51
+package-lock.json
+  h_83bc5aaa251b9b 1-2170
+package.json
+  h_83bc5aaa251b9b 1-31
+slack-manifest.json
+  h_83bc5aaa251b9b 1-29
+tests/backend.test.ts
+  h_83bc5aaa251b9b 1-272
+tests/integrations.test.ts
+  h_83bc5aaa251b9b 1-150
+tsconfig.json
+  h_83bc5aaa251b9b 1-14
+vitest.config.ts
+  h_83bc5aaa251b9b 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "072cfdc74c26b3c622d07cc5778fedac83ef3d91",
+  "prompts": {},
+  "humans": {
+    "h_83bc5aaa251b9b": {
+      "author": "Evan Taylor <eltaylor1104@gmail.com>"
+    }
+  }
+}
