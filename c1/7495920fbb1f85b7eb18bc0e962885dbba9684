@@ -1,0 +1,18 @@
+.github/workflows/ci.yml
+  h_83bc5aaa251b9b 11-12
+convex/lib/conductor.ts
+  h_83bc5aaa251b9b 79-80
+tests/integrations.test.ts
+  h_83bc5aaa251b9b 127-132
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "c17495920fbb1f85b7eb18bc0e962885dbba9684",
+  "prompts": {},
+  "humans": {
+    "h_83bc5aaa251b9b": {
+      "author": "Evan Taylor <eltaylor1104@gmail.com>"
+    }
+  }
+}
