@@ -1,0 +1,24 @@
+README.md
+  h_83bc5aaa251b9b 156-163
+convex/actions.ts
+  h_83bc5aaa251b9b 4,88-89,91-97
+convex/lib/conductor.ts
+  h_83bc5aaa251b9b 69-114
+convex/runs.ts
+  h_83bc5aaa251b9b 249-262
+tests/backend.test.ts
+  h_83bc5aaa251b9b 174-195,270-274,277-290
+tests/integrations.test.ts
+  h_83bc5aaa251b9b 5-9,161-195
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "831c4fab07c85ec1e8be028451956158c6bab52c",
+  "prompts": {},
+  "humans": {
+    "h_83bc5aaa251b9b": {
+      "author": "Evan Taylor <eltaylor1104@gmail.com>"
+    }
+  }
+}
