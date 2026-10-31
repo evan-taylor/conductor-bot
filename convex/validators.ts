@@ -4,6 +4,9 @@ export const runStatus = v.union(
   v.literal("active"),
   v.literal("idle"),
   v.literal("attention"),
+  v.literal("archiving"),
+  v.literal("archived"),
+  v.literal("archive_failed"),
 );
 export const runFields = {
   key: v.string(),
@@ -44,3 +47,7 @@ export const inputDoc = v.object({
   _creationTime: v.number(),
   ...inputFields,
 });
+
+export function archiveInProgressOrDone(status: string): boolean {
+  return ["archiving", "archived", "archive_failed"].includes(status);
+}

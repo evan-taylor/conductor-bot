@@ -10,7 +10,10 @@ server or database is required.
 ## What works
 
 - A mention starts a workspace named from the request in the configured Conductor project.
-- The first bot message includes an **Open workspace** button.
+- The first bot message includes **Open workspace** and **Archive workspace** buttons.
+- Archiving is limited to authorized users, stops monitoring and further thread inputs,
+  and updates the original message. The workspace can be restored in Conductor;
+  start a new Slack thread for new work.
 - Authorized human replies in the thread are queued and sent to the same session.
 - Recipe instructions are included on the first input only; follow-ups contain just
   the user's message. Agents are instructed to use `babysit-pr` for every PR they

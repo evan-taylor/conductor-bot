@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { vWorkflowId } from "@convex-dev/workflow";
+import { type WorkflowId, vWorkflowId } from "@convex-dev/workflow";
 import { vResultValidator } from "@convex-dev/workpool";
 import {
   internalMutation,
@@ -8,8 +8,9 @@ import {
 } from "./_generated/server";
 import { internal } from "./_generated/api";
 import type { Doc, Id } from "./_generated/dataModel";
-import { runDoc, inputDoc } from "./validators";
+import { archiveInProgressOrDone, runDoc, inputDoc } from "./validators";
 import { workflow } from "./workflow";
+import { slackAccess } from "./lib/config";
 
 async function launch(ctx: MutationCtx, runId: Id<"runs">, generation: number) {
   const workflowId = await workflow.start(
@@ -65,6 +66,7 @@ export const ingest = internalMutation({
         )
         .unique();
     }
+    if (run && archiveInProgressOrDone(run.status)) return null;
     if (!run && !args.canCreate) return null;
     if (!run) {
       const runId = await ctx.db.insert("runs", {
@@ -236,6 +238,8 @@ export const resume = internalMutation({
   returns: v.null(),
   handler: async (ctx, { runId }) => {
     const run = await ctx.db.get(runId);
+    if (run && archiveInProgressOrDone(run.status))
+      throw new Error("Archived runs cannot be resumed from this thread");
     if (!run || run.status === "active")
       throw new Error("Run missing or already active");
     if (!run.sessionId)
@@ -256,6 +260,67 @@ export const rewindTranscript = internalMutation({
       cursor: undefined,
       inputObserved: false,
       replyObserved: false,
+    });
+    return null;
+  },
+});
+
+export const requestArchive = internalMutation({
+  args: {
+    runId: v.string(),
+    teamId: v.string(),
+    userId: v.string(),
+    channel: v.string(),
+    messageTs: v.string(),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    if (!slackAccess(args.teamId, args.userId)) return false;
+    const runId = ctx.db.normalizeId("runs", args.runId);
+    if (!runId) return false;
+    const run = await ctx.db.get(runId);
+    if (
+      !run ||
+      !run.workspaceId ||
+      run.teamId !== args.teamId ||
+      run.channel !== args.channel
+    )
+      return false;
+    const notice = await ctx.db
+      .query("outputs")
+      .withIndex("by_runId_and_key", (q) =>
+        q.eq("runId", runId).eq("key", "workspace:0"),
+      )
+      .unique();
+    if (!notice || notice.slackTs !== args.messageTs) return false;
+    if (run.status === "archiving") return true;
+    if (run.status === "archived") {
+      await ctx.scheduler.runAfter(0, internal.actions.refreshWorkspaceNotice, {
+        runId,
+      });
+      return true;
+    }
+    await ctx.db.patch(runId, {
+      status: "archiving",
+      generation: run.generation + 1,
+      error: undefined,
+    });
+    if (run.status === "active" && run.workflowId)
+      await workflow.cancel(ctx, run.workflowId as WorkflowId);
+    await ctx.scheduler.runAfter(0, internal.actions.archiveWorkspace, {
+      runId,
+    });
+    return true;
+  },
+});
+
+export const finishArchive = internalMutation({
+  args: { runId: v.id("runs"), error: v.optional(v.string()) },
+  returns: v.null(),
+  handler: async (ctx, { runId, error }) => {
+    await ctx.db.patch(runId, {
+      status: error ? "archive_failed" : "archived",
+      error,
     });
     return null;
   },

@@ -61,11 +61,11 @@ http.route({
   }),
 });
 
-// URL buttons still send a signed interaction; acknowledge without starting work.
+// Validate the click, persist the archive request, then acknowledge promptly.
 http.route({
   path: "/slack/interactions",
   method: "POST",
-  handler: httpAction(async (_ctx, request) => {
+  handler: httpAction(async (ctx, request) => {
     const body = await request.text();
     if (body.length > 100000)
       return new Response("Payload too large", { status: 413 });
@@ -78,6 +78,41 @@ http.route({
       ))
     ) {
       return new Response("Unauthorized", { status: 401 });
+    }
+    let payload: unknown;
+    try {
+      payload = JSON.parse(new URLSearchParams(body).get("payload") ?? "null");
+    } catch {
+      return new Response("Invalid payload", { status: 400 });
+    }
+    const parsed = z
+      .object({
+        type: z.literal("block_actions"),
+        team: z.object({ id: z.string() }),
+        user: z.object({ id: z.string() }),
+        container: z.object({ channel_id: z.string(), message_ts: z.string() }),
+        actions: z.array(
+          z.object({ action_id: z.string(), value: z.string().optional() }),
+        ),
+      })
+      .safeParse(payload);
+    if (!parsed.success)
+      return new Response("Invalid payload", { status: 400 });
+    const event = parsed.data;
+    const archive = event.actions.find(
+      (action) => action.action_id === "archive_workspace",
+    );
+    if (archive) {
+      if (!archive.value)
+        return new Response("Invalid payload", { status: 400 });
+      const accepted = await ctx.runMutation(internal.runs.requestArchive, {
+        runId: archive.value,
+        teamId: event.team.id,
+        userId: event.user.id,
+        channel: event.container.channel_id,
+        messageTs: event.container.message_ts,
+      });
+      if (!accepted) return new Response("Forbidden", { status: 403 });
     }
     return new Response(null, { status: 200 });
   }),

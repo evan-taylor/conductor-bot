@@ -1,5 +1,6 @@
 import { convexTest } from "convex-test";
 import workflowTest from "@convex-dev/workflow/test";
+import type { WorkflowId } from "@convex-dev/workflow";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import schema from "../convex/schema";
 import { internal } from "../convex/_generated/api";
@@ -347,4 +348,168 @@ it("completes the durable workflow through mocked Conductor and Slack APIs", asy
   expect(
     fetchMock.mock.calls.filter(([url]) => url.includes("chat.postMessage")),
   ).toHaveLength(2);
+});
+
+it("authenticates archive clicks, binds them to the notice, and stops the run once", async () => {
+  const { createHmac } = await import("node:crypto");
+  const t = backend();
+  vi.stubEnv("SLACK_SIGNING_SECRET", "signing-secret");
+  vi.stubEnv("SLACK_TEAM_ID", "T1");
+  vi.stubEnv("SLACK_ALLOWED_USER_IDS", "U1");
+  vi.stubEnv("SLACK_BOT_TOKEN", "test-only");
+  vi.stubEnv("CONDUCTOR_API_KEY", "test-only");
+  const id = (await t.mutation(internal.runs.ingest, input))!;
+  await t.mutation(internal.runs.attach, {
+    runId: id,
+    workspaceId: "w1",
+    sessionId: "s1",
+    deepLink: "conductor://w1",
+  });
+  await t.mutation(internal.runs.recordOutput, {
+    runId: id,
+    key: "workspace:0",
+    slackTs: "2",
+    root: false,
+  });
+  const original = await t.query(internal.runs.get, { runId: id });
+  const click = async (
+    user = "U1",
+    channel = "C1",
+    message = "2",
+    validSignature = true,
+  ) => {
+    const body = new URLSearchParams({
+      payload: JSON.stringify({
+        type: "block_actions",
+        team: { id: "T1" },
+        user: { id: user },
+        container: { channel_id: channel, message_ts: message },
+        actions: [{ action_id: "archive_workspace", value: id }],
+      }),
+    }).toString();
+    const timestamp = String(Math.floor(Date.now() / 1000));
+    const signature = `v0=${createHmac("sha256", "signing-secret").update(`v0:${timestamp}:${body}`).digest("hex")}`;
+    return t.fetch("/slack/interactions", {
+      method: "POST",
+      body,
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        "x-slack-request-timestamp": timestamp,
+        "x-slack-signature": validSignature ? signature : "invalid",
+      },
+    });
+  };
+  expect((await click("U2")).status).toBe(403);
+  expect((await click("U1", "other-channel")).status).toBe(403);
+  expect((await click("U1", "C1", "other-message")).status).toBe(403);
+  expect((await click("U1", "C1", "2", false)).status).toBe(401);
+  expect((await t.query(internal.runs.get, { runId: id })).status).toBe(
+    "active",
+  );
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url.endsWith("/w1/archive"))
+      return Response.json({ workspaceId: "w1", status: "archived" });
+    if (url.endsWith("chat.update"))
+      return Response.json({ ok: true, ts: "2" });
+    throw new Error(`Unexpected external request ${url}`);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  expect((await click()).status).toBe(200);
+  expect((await click()).status).toBe(200);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect((await t.query(internal.runs.get, { runId: id })).status).toBe(
+    "archived",
+  );
+  expect(
+    fetchMock.mock.calls.filter(([url]) => url.endsWith("/archive")),
+  ).toHaveLength(1);
+  await t.mutation(internal.runs.onComplete, {
+    workflowId: original.workflowId! as WorkflowId,
+    result: { kind: "success", returnValue: null },
+    context: { runId: id, generation: original.generation },
+  });
+  expect((await t.query(internal.runs.get, { runId: id })).status).toBe(
+    "archived",
+  );
+  expect(
+    await t.mutation(internal.runs.ingest, {
+      ...input,
+      key: "slack:T1:C1:3",
+      text: "More work",
+      canCreate: false,
+    }),
+  ).toBeNull();
+  fetchMock.mockClear();
+  expect(await t.action(internal.actions.sendInput, { runId: id })).toBe(false);
+  expect(await t.action(internal.actions.poll, { runId: id })).toEqual({
+    done: true,
+    more: false,
+  });
+  expect(fetchMock).not.toHaveBeenCalled();
+  await expect(t.mutation(internal.runs.resume, { runId: id })).rejects.toThrow(
+    "Archived runs",
+  );
+});
+
+it("keeps an uncertain archive stopped and lets an explicit retry finish it", async () => {
+  const t = backend();
+  vi.stubEnv("SLACK_TEAM_ID", "T1");
+  vi.stubEnv("SLACK_ALLOWED_USER_IDS", "U1");
+  vi.stubEnv("SLACK_BOT_TOKEN", "test-only");
+  vi.stubEnv("CONDUCTOR_API_KEY", "test-only");
+  const id = await t.run((ctx) =>
+    ctx.db.insert("runs", {
+      key: "archive-test",
+      source: "slack",
+      projectId: "p1",
+      recipe: "coding",
+      title: "Task",
+      channel: "C1",
+      threadTs: "1",
+      teamId: "T1",
+      status: "idle",
+      generation: 0,
+      seenWorking: false,
+      lastInputAt: Date.now(),
+      workspaceId: "w1",
+      sessionId: "s1",
+      deepLink: "conductor://w1",
+    }),
+  );
+  await t.mutation(internal.runs.recordOutput, {
+    runId: id,
+    key: "workspace:0",
+    slackTs: "2",
+    root: false,
+  });
+  let attempts = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: string) => {
+      if (url.endsWith("/archive")) {
+        if (++attempts === 1) throw new Error("response lost");
+        return Response.json({ workspaceId: "w1", status: "archived" });
+      }
+      return Response.json({ ok: true, ts: "2" });
+    }),
+  );
+  const args = {
+    runId: id,
+    teamId: "T1",
+    userId: "U1",
+    channel: "C1",
+    messageTs: "2",
+  };
+  await t.mutation(internal.runs.requestArchive, args);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect((await t.query(internal.runs.get, { runId: id })).status).toBe(
+    "archive_failed",
+  );
+  expect(attempts).toBe(1);
+  await t.mutation(internal.runs.requestArchive, args);
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect((await t.query(internal.runs.get, { runId: id })).status).toBe(
+    "archived",
+  );
+  expect(attempts).toBe(2);
 });

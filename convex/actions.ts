@@ -7,16 +7,17 @@ import {
   inputMessageId,
   workspaceName,
 } from "./lib/conductor";
+import { archiveInProgressOrDone } from "./validators";
 import { makeBrief } from "./lib/recipes";
 import { stableUuid } from "./lib/security";
-import { chunks, postSlack } from "./lib/slack";
+import { chunks, postSlack, updateWorkspaceMessage } from "./lib/slack";
 
 export const createWorkspace = internalAction({
   args: { runId: v.id("runs") },
   returns: v.null(),
   handler: async (ctx, { runId }) => {
     const run = await ctx.runQuery(internal.runs.get, { runId });
-    if (run.workspaceId) return null;
+    if (run.workspaceId || archiveInProgressOrDone(run.status)) return null;
     const result = await conductor.create(
       run.projectId,
       workspaceName(run.title),
@@ -32,6 +33,7 @@ export const sendInput = internalAction({
     const input = await ctx.runQuery(internal.runs.nextInput, { runId });
     if (!input) return false;
     const run = await ctx.runQuery(internal.runs.get, { runId });
+    if (archiveInProgressOrDone(run.status)) return false;
     if (!run.sessionId) throw new Error("Workspace has no session");
     const messageId = await stableUuid(input._id);
     await conductor.send(
@@ -57,7 +59,7 @@ export const notify = internalAction({
   returns: v.null(),
   handler: async (ctx, { runId, key, text, mrkdwn, workspaceUrl }) => {
     const run = await ctx.runQuery(internal.runs.get, { runId });
-    if (!run.channel) return null;
+    if (!run.channel || archiveInProgressOrDone(run.status)) return null;
     let threadTs = run.threadTs;
     for (const [index, chunk] of chunks(text).entries()) {
       const partKey = `${key}:${index}`;
@@ -71,6 +73,7 @@ export const notify = internalAction({
       }
       const slackTs = await postSlack(run.channel, chunk, threadTs, {
         mrkdwn,
+        runId,
         workspaceUrl: index === 0 ? workspaceUrl : undefined,
       });
       await ctx.runMutation(internal.runs.recordOutput, {
@@ -92,6 +95,7 @@ export const poll = internalAction({
     { runId },
   ): Promise<{ done: boolean; more: boolean }> => {
     const run = await ctx.runQuery(internal.runs.get, { runId });
+    if (archiveInProgressOrDone(run.status)) return { done: true, more: false };
     if (!run.sessionId) throw new Error("Workspace has no session");
     const status = await conductor.status(run.sessionId);
     if (status.status === "error")
@@ -131,5 +135,48 @@ export const poll = internalAction({
       done: !page.hasMore && status.status === "idle" && replyObserved,
       more: page.hasMore,
     };
+  },
+});
+
+export const refreshWorkspaceNotice = internalAction({
+  args: { runId: v.id("runs") },
+  returns: v.null(),
+  handler: async (ctx, { runId }) => {
+    const run = await ctx.runQuery(internal.runs.get, { runId });
+    const ts = await ctx.runQuery(internal.runs.output, {
+      runId,
+      key: "workspace:0",
+    });
+    if (run.channel && run.deepLink && ts)
+      await updateWorkspaceMessage(
+        run.channel,
+        ts,
+        run.deepLink,
+        runId,
+        run.status,
+      );
+    return null;
+  },
+});
+
+export const archiveWorkspace = internalAction({
+  args: { runId: v.id("runs") },
+  returns: v.null(),
+  handler: async (ctx, { runId }) => {
+    const run = await ctx.runQuery(internal.runs.get, { runId });
+    if (run.status !== "archiving" || !run.workspaceId) return null;
+    try {
+      await conductor.archive(run.workspaceId);
+    } catch (error) {
+      await ctx.runMutation(internal.runs.finishArchive, {
+        runId,
+        error: error instanceof Error ? error.message : "Archive failed",
+      });
+      await ctx.runAction(internal.actions.refreshWorkspaceNotice, { runId });
+      return null;
+    }
+    await ctx.runMutation(internal.runs.finishArchive, { runId });
+    await ctx.runAction(internal.actions.refreshWorkspaceNotice, { runId });
+    return null;
   },
 });

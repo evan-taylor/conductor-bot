@@ -34,6 +34,16 @@ async function request(path: string, body?: unknown): Promise<unknown> {
 
 // This adapter is the only module coupled to Conductor's beta HTTP contract.
 export const conductor = {
+  async archive(workspaceId: string) {
+    return z
+      .object({ workspaceId: z.string(), status: z.literal("archived") })
+      .parse(
+        await request(
+          `/workspaces/${encodeURIComponent(workspaceId)}/archive`,
+          {},
+        ),
+      );
+  },
   async create(projectId: string, name: string) {
     return workspaceSchema.parse(
       await request("/workspaces", {
