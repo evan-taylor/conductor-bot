@@ -82,7 +82,7 @@ it("routes replies to automation-created threads", async () => {
   ).toBe(id);
 });
 
-it("does not recreate an attached workspace and reuses message IDs across uncertain sends", async () => {
+it("includes the recipe only on the first input and preserves payloads across uncertain sends", async () => {
   const t = backend();
   const id = (await t.mutation(internal.runs.ingest, input))!;
   await t.mutation(internal.runs.attach, {
@@ -107,6 +107,30 @@ it("does not recreate an attached workspace and reuses message IDs across uncert
     JSON.parse(fetchMock.mock.calls[1][1].body).messageId,
   );
   expect(await t.query(internal.runs.nextInput, { runId: id })).toBeNull();
+  const initialBody = JSON.parse(fetchMock.mock.calls[0][1].body);
+  expect(initialBody.message).toContain(
+    "Work on the user's request in this repository.",
+  );
+  expect(initialBody.message).toContain(input.text);
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body)).toEqual(initialBody);
+
+  const followUp = "Please check the tests again.";
+  await t.mutation(internal.runs.ingest, {
+    ...input,
+    key: "slack:T1:C1:2",
+    text: followUp,
+    canCreate: false,
+  });
+  fetchMock.mockRejectedValueOnce(new Error("follow-up response lost"));
+  fetchMock.mockResolvedValueOnce(Response.json({}));
+  await expect(
+    t.action(internal.actions.sendInput, { runId: id }),
+  ).rejects.toThrow("follow-up response lost");
+  await t.action(internal.actions.sendInput, { runId: id });
+  const followUpBody = JSON.parse(fetchMock.mock.calls[2][1].body);
+  expect(followUpBody.message).toBe(followUp);
+  expect(JSON.parse(fetchMock.mock.calls[3][1].body)).toEqual(followUpBody);
+  expect(followUpBody.messageId).not.toBe(initialBody.messageId);
 });
 
 it("does not consider initial idle to be task completion", async () => {

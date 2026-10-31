@@ -11,6 +11,8 @@ server or database is required.
 
 - A mention starts a workspace in the configured Conductor project.
 - Authorized human replies in the thread are queued and sent to the same session.
+- Recipe instructions are included on the first input only; follow-ups contain just
+  the user's message.
 - Assistant text and PR links are relayed back to Slack.
 - Authenticated automation requests create runs and optionally start Slack threads.
 - Slack replies to automation-created threads reach their existing workspace.

@@ -28,7 +28,7 @@ export const sendInput = internalAction({
     const messageId = await stableUuid(input._id);
     await conductor.send(
       run.sessionId,
-      makeBrief(run.recipe, input.text),
+      run.awaitingMessageId ? input.text : makeBrief(run.recipe, input.text),
       messageId,
     );
     await ctx.runMutation(internal.runs.sent, {
