@@ -1,0 +1,22 @@
+convex/actions.ts
+  h_83bc5aaa251b9b 42-47,49,63
+convex/lib/recipes.ts
+  h_83bc5aaa251b9b 13
+convex/lib/slack.ts
+  h_83bc5aaa251b9b 7,21
+convex/workflow.ts
+  h_83bc5aaa251b9b 26-27
+tests/backend.test.ts
+  h_83bc5aaa251b9b 327-333
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1f2d119381fe5deb5e63411cb8baee013b1b9f0f",
+  "prompts": {},
+  "humans": {
+    "h_83bc5aaa251b9b": {
+      "author": "Evan Taylor <eltaylor1104@gmail.com>"
+    }
+  }
+}
